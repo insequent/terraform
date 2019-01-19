@@ -485,6 +485,8 @@ func (s *GRPCProviderServer) PlanResourceChange(_ context.Context, req *proto.Pl
 		return resp, nil
 	}
 
+	//fmt.Printf("\nPROPOSED: %#v\n", proposedNewStateVal)
+
 	info := &terraform.InstanceInfo{
 		Type: req.TypeName,
 	}
@@ -502,10 +504,13 @@ func (s *GRPCProviderServer) PlanResourceChange(_ context.Context, req *proto.Pl
 		}
 	}
 
+	//fmt.Printf("PRIOR: %#v\n", priorState)
+
 	priorState.Meta = priorPrivate
 
 	// turn the proposed state into a legacy configuration
 	cfg := terraform.NewResourceConfigShimmed(proposedNewStateVal, block)
+	//fmt.Printf("CONFIG: %#v\n", cfg)
 
 	diff, err := s.provider.SimpleDiff(info, priorState, cfg)
 	if err != nil {
@@ -520,8 +525,9 @@ func (s *GRPCProviderServer) PlanResourceChange(_ context.Context, req *proto.Pl
 				delete(diff.Attributes, k)
 			}
 		}
-
 	}
+
+	//fmt.Printf("DIFF: %#v\n", diff)
 
 	if diff == nil || len(diff.Attributes) == 0 {
 		// schema.Provider.Diff returns nil if it ends up making a diff with no
@@ -545,6 +551,8 @@ func (s *GRPCProviderServer) PlanResourceChange(_ context.Context, req *proto.Pl
 	plannedAttrs, err := diff.Apply(priorState.Attributes, block)
 
 	plannedAttrs = normalizeFlatmapContainers(priorState.Attributes, plannedAttrs, false)
+
+	//fmt.Printf("\nPLANNED ATTRS: %#v\n", plannedAttrs)
 
 	plannedStateVal, err := hcl2shim.HCL2ValueFromFlatmap(plannedAttrs, block.ImpliedType())
 	if err != nil {

@@ -2,6 +2,7 @@ package schema
 
 import (
 	"encoding/json"
+	"log"
 
 	"github.com/zclconf/go-cty/cty"
 	ctyjson "github.com/zclconf/go-cty/cty/json"
@@ -31,11 +32,14 @@ func diffFromValues(prior, planned cty.Value, res *Resource, cust CustomizeDiffF
 	configSchema := res.CoreConfigSchema()
 
 	cfg := terraform.NewResourceConfigShimmed(planned, configSchema)
+	log.Printf("[XXXX] PLANNED CONFIG: %#v\n", cfg)
 
 	diff, err := schemaMap(res.Schema).Diff(instanceState, cfg, cust, nil, false)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Printf("[XXXX] APPLY DIFF: %#v\n", diff)
 
 	return diff, err
 }
